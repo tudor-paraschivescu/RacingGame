@@ -1,0 +1,212 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Core">
+      <UniqueIdentifier>{9494f307-c1ec-49c3-b3a2-e8bd3267d84e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Window">
+      <UniqueIdentifier>{a3d208ce-c616-4e32-9d2d-f8e8825c59cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="include">
+      <UniqueIdentifier>{1d2eb2cb-c2cc-41b4-af6d-395b05f55a04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Component">
+      <UniqueIdentifier>{473dfab2-3e7d-432d-8e69-65aa99f48c29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\GPU">
+      <UniqueIdentifier>{271e5bd2-7cb3-40b7-b2e5-5e343c58f910}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Managers">
+      <UniqueIdentifier>{2940a1fd-9fef-46a7-93fb-a8241118d00a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Teme">
+      <UniqueIdentifier>{bc41877f-2faf-464b-84f2-c1e15dfb8e46}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Teme\Tema1">
+      <UniqueIdentifier>{272a8a51-f981-46c8-a985-bb15063a9eae}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Teme\Tema1\Objects">
+      <UniqueIdentifier>{d36e8739-0bd6-4c9a-949f-c29a17011458}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Teme\Tema1\Transformations">
+      <UniqueIdentifier>{f71d4399-0dbc-44ab-b4b5-13264f95c796}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Teme\Tema2">
+      <UniqueIdentifier>{b174d131-671c-4d2e-aded-dbf03a06d01c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Teme\Tema2\Shaders">
+      <UniqueIdentifier>{1369a4df-c9b2-4efa-9922-f0d183c2aae1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Teme\Tema2\Factories">
+      <UniqueIdentifier>{3deaec27-fb58-4630-b958-7e51ae277b31}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Source\Core\Engine.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Core\World.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\include\gl.cpp">
+      <Filter>include</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Core\Window\WindowObject.cpp">
+      <Filter>Core\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Core\GPU\Shader.cpp">
+      <Filter>Core\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Main.cpp" />
+    <ClCompile Include="..\Source\Core\Window\WindowCallbacks.cpp">
+      <Filter>Core\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Core\GPU\Mesh.cpp">
+      <Filter>Core\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Core\GPU\Texture2D.cpp">
+      <Filter>Core\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Core\Managers\TextureManager.cpp">
+      <Filter>Core\Managers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Component\CameraInput.cpp">
+      <Filter>Component</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Core\Window\InputController.cpp">
+      <Filter>Core\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Component\SimpleScene.cpp">
+      <Filter>Component</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Core\GPU\GPUBuffers.cpp">
+      <Filter>Core\GPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Component\SceneInput.cpp">
+      <Filter>Component</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Teme\Tema1\Objects\Object.cpp">
+      <Filter>Teme\Tema1\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Teme\Tema1\Objects\Line.cpp">
+      <Filter>Teme\Tema1\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Teme\Tema1\Objects\Asteroid.cpp">
+      <Filter>Teme\Tema1\Objects</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Teme\Tema1\Homework1.cpp">
+      <Filter>Teme\Tema1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Teme\Tema2\Homework2.cpp">
+      <Filter>Teme\Tema2</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Teme\Tema2\Factories\RoadFactory.cpp">
+      <Filter>Teme\Tema2\Factories</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Source\Core\World.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\Engine.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\include\gl.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\include\glm.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\include\math.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\include\utils.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\Window\WindowObject.h">
+      <Filter>Core\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\GPU\Shader.h">
+      <Filter>Core\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\Window\WindowCallbacks.h">
+      <Filter>Core\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\GPU\Mesh.h">
+      <Filter>Core\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\GPU\Texture2D.h">
+      <Filter>Core\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\Managers\ResourcePath.h">
+      <Filter>Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\Managers\TextureManager.h">
+      <Filter>Core\Managers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Component\CameraInput.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\Window\InputController.h">
+      <Filter>Core\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Component\SimpleScene.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Core\GPU\GPUBuffers.h">
+      <Filter>Core\GPU</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Component\SceneInput.h">
+      <Filter>Component</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema1\Transformations\Transformation.h">
+      <Filter>Teme\Tema1\Transformations</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema1\Objects\Object.h">
+      <Filter>Teme\Tema1\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema1\Objects\Color.h">
+      <Filter>Teme\Tema1\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema1\Objects\Astronaut.h">
+      <Filter>Teme\Tema1\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema1\Transformations\Math.h">
+      <Filter>Teme\Tema1\Transformations</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema1\Objects\Line.h">
+      <Filter>Teme\Tema1\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema1\Objects\Asteroid.h">
+      <Filter>Teme\Tema1\Objects</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema1\Homework1.h">
+      <Filter>Teme\Tema1</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema2\Homework2.h">
+      <Filter>Teme\Tema2</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\HomeworkList.h">
+      <Filter>Teme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Teme\Tema2\Factories\RoadFactory.h">
+      <Filter>Teme\Tema2\Factories</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\Source\Teme\Tema1\README.txt">
+      <Filter>Teme\Tema1</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\Source\Teme\Tema2\Shaders\FragmentShader.glsl">
+      <Filter>Teme\Tema2\Shaders</Filter>
+    </None>
+    <None Include="..\Source\Teme\Tema2\Shaders\VertexShader.glsl">
+      <Filter>Teme\Tema2\Shaders</Filter>
+    </None>
+    <None Include="..\Source\Teme\Tema2\Track1.conf">
+      <Filter>Teme\Tema2</Filter>
+    </None>
+  </ItemGroup>
+</Project>
