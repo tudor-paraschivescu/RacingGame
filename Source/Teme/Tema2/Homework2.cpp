@@ -7,9 +7,10 @@
 
 using namespace std;
 
-glm::vec3 centerOfMovingObject = glm::vec3(0, 0, 0);
 vector<Mesh *> roadPartsMeshes;
 vector<Mesh *> bordersMeshes;
+
+float hourOfTheDay = 10.0;
 
 Homework2::Homework2()
 {
@@ -155,8 +156,14 @@ void Homework2::Init()
 		}
 	}
 
+	// Create the mesh for the earth (ground)
+	Mesh *earth = CreateMesh(EARTH_PREFIX, (glm::vec3)NULL, (Road::BorderType)NULL);
+
+	// Create the mesh for the sky
+	Mesh* sky = CreateMesh(SKY_PREFIX, (glm::vec3)NULL, (Road::BorderType)NULL);
+
 	// Create a shader program for drawing face polygon with the color of the normal
-	Shader *shader = new Shader("ShaderHomework2");
+	Shader *shader = new Shader(SHADER_NAME);
 	shader->AddShader("Source/Teme/Tema2/Shaders/VertexShader.glsl", GL_VERTEX_SHADER);
 	shader->AddShader("Source/Teme/Tema2/Shaders/FragmentShader.glsl", GL_FRAGMENT_SHADER);
 	shader->CreateAndLink();
@@ -176,7 +183,17 @@ Mesh * Homework2::CreateMesh(string name, glm::vec3 bottomLeftCorner, Road::Bord
 	else if (name.compare(0, BORDER_PREFIX.length(), BORDER_PREFIX) == 0) {
 		// Create vector and indices for a border object
 		vertices = RoadFactory::createBorderVertices(bottomLeftCorner, borderType);
-		indices = RoadFactory::createBorderIndices();
+		indices = RoadFactory::createCuboidIndices();
+	}
+	else if (name.compare(0, EARTH_PREFIX.length(), EARTH_PREFIX) == 0) {
+		// Create vector and indices for the earth object
+		vertices = EarthFactory::createEarthVertices();
+		indices = RoadFactory::createCuboidIndices();
+	}
+	else if (name.compare(0, SKY_PREFIX.length(), SKY_PREFIX) == 0) {
+		// Create vector and indices for the sky object
+		vertices = SkyFactory::createSkyVertices();
+		indices = RoadFactory::createCuboidIndices();
 	}
 
 	// Create the VAO and bind it
@@ -256,8 +273,16 @@ void Homework2::Update(float deltaTimeSeconds)
 	*/
 	//RenderSimpleMesh(meshes["bamboo"], shaders["ShaderHomework2"], modelMatrix);
 
-	for (int i = 0; i < roadPartsMeshes.size() && i < ROADBLOCKS_TO_RENDER; i++) {
-		RenderSimpleMesh(roadPartsMeshes[i], shaders["VertexColor"], modelMatrix);
+	// Update the current hour of the 24h day
+	hourOfTheDay = fmod(hourOfTheDay + deltaTimeSeconds * ONE_MINUTE, 24);
+
+	// Render the earth and the sky using the custom shader
+	RenderSimpleMesh(meshes[EARTH_PREFIX], shaders[SHADER_NAME], modelMatrix);
+	RenderSimpleMesh(meshes[SKY_PREFIX], shaders[SHADER_NAME], modelMatrix);
+
+	// Render the road using the custom shader
+	for (int i = 0; i < roadPartsMeshes.size() /*&& i < ROADBLOCKS_TO_RENDER*/; i++) {
+		RenderSimpleMesh(roadPartsMeshes[i], shaders[SHADER_NAME], modelMatrix);
 		RenderSimpleMesh(bordersMeshes[2 * i], shaders["VertexColor"], modelMatrix);
 		RenderSimpleMesh(bordersMeshes[2 * i + 1], shaders["VertexColor"], modelMatrix);
 	}
@@ -266,6 +291,22 @@ void Homework2::Update(float deltaTimeSeconds)
 void Homework2::FrameEnd()
 {
 	DrawCoordinatSystem();
+}
+
+int Homework2::GetMeshSHID(Mesh *mesh)
+{
+	if (strncmp(mesh->GetMeshID(), ROADPART_PREFIX.c_str(), ROADPART_PREFIX.length()) == 0) {
+		return ROADPART_SHID;
+	}
+	else if (strncmp(mesh->GetMeshID(), BORDER_PREFIX.c_str(), BORDER_PREFIX.length()) == 0) {
+		return BORDER_SHID;
+	}
+	else if (strncmp(mesh->GetMeshID(), EARTH_PREFIX.c_str(), EARTH_PREFIX.length()) == 0) {
+		return EARTH_SHID;
+	}
+	else {
+		return SKY_SHID;
+	}
 }
 
 void Homework2::RenderSimpleMesh(Mesh * mesh, Shader * shader, const glm::mat4 & modelMatrix)
@@ -296,6 +337,16 @@ void Homework2::RenderSimpleMesh(Mesh * mesh, Shader * shader, const glm::mat4 &
 	glm::mat4 projectionMatrix = GetSceneCamera()->GetProjectionMatrix();
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
 
+	if (strcmp(shader->GetName(), SHADER_NAME) == 0) {
+		// Send the hour of the day to the shader
+		int hour = glGetUniformLocation(shader->GetProgramID(), "hour");
+		glUniform1f(hour, hourOfTheDay);
+
+		// Send the ID of the mesh to the shader
+		int id = glGetUniformLocation(shader->GetProgramID(), "id");
+		glUniform1i(id, GetMeshSHID(mesh));
+	}
+
 	// Draw the object
 	glBindVertexArray(mesh->GetBuffers()->VAO);
 	glDrawElements(mesh->GetDrawMode(), static_cast<int>(mesh->indices.size()), GL_UNSIGNED_SHORT, 0);
@@ -308,12 +359,14 @@ void Homework2::OnInputUpdate(float deltaTime, int mods)
 void Homework2::OnKeyPress(int key, int mods)
 {
 	// Example of recycling road parts and borders
+	/*
 	if (roadPartsMeshes.size() != 0)
 	{
 		roadPartsMeshes.erase(roadPartsMeshes.begin());
 		bordersMeshes.erase(bordersMeshes.begin());
 		bordersMeshes.erase(bordersMeshes.begin());
 	}
+	*/	
 }
 
 void Homework2::OnKeyRelease(int key, int mods)

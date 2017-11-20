@@ -44,10 +44,10 @@ std::vector<VertexFormat> RoadFactory::createRoadPartVertices(glm::vec3 bottomLe
 	// Create the vertices vector
 	std::vector<VertexFormat> vertices =
 	{
-		VertexFormat(glm::vec4(bottomLeftCorner, 1.0), Road::ROADPART_COLOR),
-		VertexFormat(glm::vec4(topLeftCorner, 1.0), Road::ROADPART_COLOR),
-		VertexFormat(glm::vec4(topRightCorner, 1.0), Road::ROADPART_COLOR),
-		VertexFormat(glm::vec4(bottomRightCorner, 1.0), Road::ROADPART_COLOR)
+		VertexFormat(glm::vec4(bottomLeftCorner, 1.0), glm::vec3(0, 0, 0)),
+		VertexFormat(glm::vec4(topLeftCorner, 1.0), glm::vec3(0, 0, 0)),
+		VertexFormat(glm::vec4(topRightCorner, 1.0), glm::vec3(0, 0, 0)),
+		VertexFormat(glm::vec4(bottomRightCorner, 1.0), glm::vec3(0, 0, 0))
 	};
 
 	return vertices;
@@ -124,7 +124,7 @@ std::vector<VertexFormat> RoadFactory::createBorderVertices(glm::vec3 bottomLeft
 	}
 }
 
-std::vector<unsigned short> RoadFactory::createBorderIndices()
+std::vector<unsigned short> RoadFactory::createCuboidIndices()
 {
 	return {
 		0, 1, 2,		1, 3, 2,
