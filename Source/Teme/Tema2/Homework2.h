@@ -5,6 +5,7 @@
 #include "Factories/RoadFactory.h"
 #include "Factories/EarthFactory.h"
 #include "Factories/SkyFactory.h"
+#include "Objects\CollisionCircle.h"
 
 class Homework2 : public SimpleScene
 {
@@ -40,7 +41,14 @@ private:
 	const int EARTH_SHID = 2;
 	const std::string SKY_PREFIX = "SKY";
 	const int SKY_SHID = 3;
+	const std::string OBSTACLE_PREFIX = "OBSTACLE";
 	const char SHADER_NAME[18] = "SHADER_HOMEWORK_2";
+
+	// Obstacle data
+	const int COUNT_OBSTACLES = 10;
+	const float OBSTACLE_COORDS[20] = { 13, 9.5, 9, 11.5, -1, 11.5, -6, 9.5, -4, 2.5,
+		-1, 0.5, 7, 1.5, 7, -8.5, -5, -7.5, 0, -19.5 };
+	const float OBSTACLE_RADIUS = 0.5;
 
 	// Track Configuration Files Constants
 	const std::string PATH_TO_CONFIG_FILE = "D:\\Tudor\\Desktop\\Teme-EGC\\Source\\Teme\\Tema2\\Track1.conf";
@@ -48,9 +56,10 @@ private:
 	const std::string LEFT_LINE = "LEFT_LINE";
 	const std::string RIGHT_LINE = "RIGHT_LINE";
 
+	// Constants and coordinates for meshes
 	const float ROAD_START_X = 20;
 	const float ROAD_START_Z = 24;
 	const int ROADBLOCKS_TO_RENDER = 10;
-
 	const float ONE_MINUTE = 1.5;
+	
 };

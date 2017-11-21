@@ -9,6 +9,9 @@ using namespace std;
 
 vector<Mesh *> roadPartsMeshes;
 vector<Mesh *> bordersMeshes;
+vector<Mesh *> obstacles;
+vector<float> obsCoords;
+vector<CollisionCircle> collisionCircles;
 
 float hourOfTheDay = 10.0;
 
@@ -162,6 +165,31 @@ void Homework2::Init()
 	// Create the mesh for the sky
 	Mesh* sky = CreateMesh(SKY_PREFIX, (glm::vec3)NULL, (Road::BorderType)NULL);
 
+	// Create the obstacles
+	bool isTeapot = true;
+	for (int i = 0; i < COUNT_OBSTACLES; i++) {
+		Mesh* obstacle = new Mesh(OBSTACLE_PREFIX + to_string(i + 1));
+		
+		if (isTeapot) {
+			obstacle->LoadMesh(RESOURCE_PATH::MODELS + "Primitives", "teapot.obj");
+		}
+		else {
+			obstacle->LoadMesh(RESOURCE_PATH::MODELS + "Primitives", "sphere.obj");
+		}
+
+		meshes[obstacle->GetMeshID()] = obstacle;
+		obstacles.push_back(obstacle);
+		obsCoords.push_back(OBSTACLE_COORDS[2 * i]);
+		obsCoords.push_back(OBSTACLE_COORDS[2 * i + 1]);
+		CollisionCircle c = CollisionCircle(OBSTACLE_COORDS[2 * i], OBSTACLE_COORDS[2 * i + 1], OBSTACLE_RADIUS);
+		collisionCircles.push_back(c);
+		isTeapot = !isTeapot;
+	}
+
+	for (CollisionCircle c : collisionCircles) {
+		cout << c.getX() << " " << c.getY() << " " << c.getRadius() << endl;
+	}
+
 	// Create a shader program for drawing face polygon with the color of the normal
 	Shader *shader = new Shader(SHADER_NAME);
 	shader->AddShader("Source/Teme/Tema2/Shaders/VertexShader.glsl", GL_VERTEX_SHADER);
@@ -264,7 +292,7 @@ void Homework2::FrameStart()
 
 void Homework2::Update(float deltaTimeSeconds)
 {
-	glm::mat4 modelMatrix = glm::mat4(1);
+	glm::mat4 modelMatrix;
 	/*
 	modelMatrix = glm::translate(modelMatrix, glm::vec3(0, 1, 0));
 	modelMatrix = glm::rotate(modelMatrix, RADIANS(45.0f), glm::vec3(0, 1, 0));
@@ -277,14 +305,23 @@ void Homework2::Update(float deltaTimeSeconds)
 	hourOfTheDay = fmod(hourOfTheDay + deltaTimeSeconds * ONE_MINUTE, 24);
 
 	// Render the earth and the sky using the custom shader
-	RenderSimpleMesh(meshes[EARTH_PREFIX], shaders[SHADER_NAME], modelMatrix);
-	RenderSimpleMesh(meshes[SKY_PREFIX], shaders[SHADER_NAME], modelMatrix);
+	RenderSimpleMesh(meshes[EARTH_PREFIX], shaders[SHADER_NAME], glm::mat4(1));
+	RenderSimpleMesh(meshes[SKY_PREFIX], shaders[SHADER_NAME], glm::mat4(1));
 
 	// Render the road using the custom shader
 	for (int i = 0; i < roadPartsMeshes.size() /*&& i < ROADBLOCKS_TO_RENDER*/; i++) {
-		RenderSimpleMesh(roadPartsMeshes[i], shaders[SHADER_NAME], modelMatrix);
-		RenderSimpleMesh(bordersMeshes[2 * i], shaders["VertexColor"], modelMatrix);
-		RenderSimpleMesh(bordersMeshes[2 * i + 1], shaders["VertexColor"], modelMatrix);
+		RenderSimpleMesh(roadPartsMeshes[i], shaders[SHADER_NAME], glm::mat4(1));
+		RenderSimpleMesh(bordersMeshes[2 * i], shaders["VertexColor"], glm::mat4(1));
+		RenderSimpleMesh(bordersMeshes[2 * i + 1], shaders["VertexColor"], glm::mat4(1));
+	}
+
+	// Render the next obstacle on the track
+	if (obstacles.size() > 0) {
+		for (int i = 0; i < obstacles.size(); i++) {
+			modelMatrix = glm::translate(glm::mat4(1), glm::vec3(obsCoords[2 * i], 0, obsCoords[2 * i + 1]));
+			modelMatrix = glm::rotate(modelMatrix, RADIANS(60.0f), glm::vec3(0, 1, 0));
+			RenderSimpleMesh(obstacles[i], shaders["VertexNormal"], modelMatrix);
+		}	
 	}
 }
 
@@ -359,14 +396,21 @@ void Homework2::OnInputUpdate(float deltaTime, int mods)
 void Homework2::OnKeyPress(int key, int mods)
 {
 	// Example of recycling road parts and borders
-	/*
-	if (roadPartsMeshes.size() != 0)
-	{
-		roadPartsMeshes.erase(roadPartsMeshes.begin());
-		bordersMeshes.erase(bordersMeshes.begin());
-		bordersMeshes.erase(bordersMeshes.begin());
+	if (key == GLFW_KEY_N) {
+		if (roadPartsMeshes.size() != 0)
+		{
+			roadPartsMeshes.erase(roadPartsMeshes.begin());
+			bordersMeshes.erase(bordersMeshes.begin());
+			bordersMeshes.erase(bordersMeshes.begin());
+		}
+
+		if (obstacles.size() != 0) {
+			obstacles.erase(obstacles.begin());
+			obsCoords.erase(obsCoords.begin());
+			obsCoords.erase(obsCoords.begin());
+		}
 	}
-	*/	
+		
 }
 
 void Homework2::OnKeyRelease(int key, int mods)
