@@ -15,6 +15,9 @@ vector<CollisionCircle> collisionCircles;
 
 float hourOfTheDay = 10.0;
 
+GLenum cullFace;
+GLenum polygonMode;
+
 Homework2::Homework2()
 {
 }
@@ -25,6 +28,21 @@ Homework2::~Homework2()
 
 void Homework2::Init()
 {
+	cullFace = GL_BACK;
+	polygonMode = GL_FILL;
+
+	// Set the camera
+	glm::ivec2 resolution = window->GetResolution();
+	auto camera = GetSceneCamera();
+	camera->SetPosition(glm::vec3(x, y, z));
+	camera->SetRotation(glm::vec3(RADIANS(-30), 0, 0));
+	//y -= 4.5;
+	//z -= 5;
+	//camera->SetPosition(glm::vec3(x, y, z));
+	//camera->SetRotation(glm::vec3(0, 0, 0));
+	camera->Update();
+	GetCameraInput()->SetActive(false);
+
 	// Open track config file
 	ifstream trackConfigFile;
 	trackConfigFile.open(PATH_TO_CONFIG_FILE, ios::in);
@@ -186,9 +204,15 @@ void Homework2::Init()
 		isTeapot = !isTeapot;
 	}
 
-	for (CollisionCircle c : collisionCircles) {
-		cout << c.getX() << " " << c.getY() << " " << c.getRadius() << endl;
+	// Create the tires
+	for (int i = 0; i < COUNT_TIRES; i++) {
+		Mesh* tire = new Mesh(TIRE_PREFIX + to_string(i));
+		tire->LoadMesh(RESOURCE_PATH::MODELS + "Primitives", "tire.obj");
+		meshes[tire->GetMeshID()] = tire;
 	}
+
+	// Create the car
+	Mesh* car = CreateMesh(CAR_PREFIX, (glm::vec3)NULL, (Road::BorderType)NULL);
 
 	// Create a shader program for drawing face polygon with the color of the normal
 	Shader *shader = new Shader(SHADER_NAME);
@@ -221,6 +245,11 @@ Mesh * Homework2::CreateMesh(string name, glm::vec3 bottomLeftCorner, Road::Bord
 	else if (name.compare(0, SKY_PREFIX.length(), SKY_PREFIX) == 0) {
 		// Create vector and indices for the sky object
 		vertices = SkyFactory::createSkyVertices();
+		indices = RoadFactory::createCuboidIndices();
+	}
+	else if (name.compare(0, CAR_PREFIX.length(), CAR_PREFIX) == 0) {
+		// Create vector and indices for the car object
+		vertices = CarFactory::createCarVertices();
 		indices = RoadFactory::createCuboidIndices();
 	}
 
@@ -292,6 +321,8 @@ void Homework2::FrameStart()
 
 void Homework2::Update(float deltaTimeSeconds)
 {
+	glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
+
 	glm::mat4 modelMatrix;
 	/*
 	modelMatrix = glm::translate(modelMatrix, glm::vec3(0, 1, 0));
@@ -323,6 +354,34 @@ void Homework2::Update(float deltaTimeSeconds)
 			RenderSimpleMesh(obstacles[i], shaders["VertexNormal"], modelMatrix);
 		}	
 	}
+
+	float moveOffset = (canMove) ? deltaTimeSeconds * SPEED : 0;
+	float rotationOffset = (canMove) ? deltaTimeSeconds * ROTATION : 0;
+
+	auto camera = GetSceneCamera();
+	z -= moveOffset;
+	camera->SetPosition(glm::vec3(x, y, z));
+
+	tireRotation -= rotationOffset;
+
+	angleOfMovement += (rotateLeft) ? deltaTimeSeconds * MOVEMENT_ROTATION : 0;
+	angleOfMovement -= (rotateRight) ? deltaTimeSeconds * MOVEMENT_ROTATION : 0;
+
+	// Render the tires
+	for (int i = 0; i < COUNT_TIRES; i++) {
+		carCoords[2 * i + 1] -= moveOffset;
+		modelMatrix = glm::translate(glm::mat4(1), glm::vec3(carCoords[2 * i], 0.15, carCoords[2 * i + 1]));
+		modelMatrix = glm::rotate(modelMatrix, RADIANS(tireRotation), glm::vec3(1, 0, 0));
+		modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
+		RenderSimpleMesh(meshes[TIRE_PREFIX + to_string(i)], shaders["VertexColor"], modelMatrix);
+	}
+	
+	// Render the car
+	carCoords[CAR_INDEX + 1] -= moveOffset;
+	modelMatrix = glm::translate(glm::mat4(1), glm::vec3(
+			carCoords[CAR_INDEX], 0, carCoords[CAR_INDEX + 1]));
+	modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
+	RenderSimpleMesh(meshes[CAR_PREFIX], shaders["VertexColor"], modelMatrix);
 }
 
 void Homework2::FrameEnd()
@@ -410,11 +469,42 @@ void Homework2::OnKeyPress(int key, int mods)
 			obsCoords.erase(obsCoords.begin());
 		}
 	}
+
+	if (key == GLFW_KEY_UP) {
+		canMove = true;
+	}
+	else if (key == GLFW_KEY_DOWN) {
+		canMove = false;
+	}
+	else if (key == GLFW_KEY_LEFT) {
+		rotateLeft = true;
+	} else if (key == GLFW_KEY_RIGHT) {
+		rotateRight = true;
+	}
+
+	if (key == GLFW_KEY_SPACE)
+	{
+		switch (polygonMode)
+		{
+		case GL_LINE:
+			polygonMode = GL_FILL;
+			break;
+		default:
+			polygonMode = GL_LINE;
+			break;
+		}
+	}
 		
 }
 
 void Homework2::OnKeyRelease(int key, int mods)
 {
+	if (key == GLFW_KEY_LEFT) {
+		rotateLeft = false;
+	}
+	else if (key == GLFW_KEY_RIGHT) {
+		rotateRight = false;
+	}
 }
 
 void Homework2::OnMouseMove(int mouseX, int mouseY, int deltaX, int deltaY)
