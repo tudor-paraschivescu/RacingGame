@@ -15,9 +15,8 @@ uniform int id;
 
 // IDs that help identify the current shape
 uniform int ROADPART_ID = 0;
-uniform int BORDER_ID = 1;
-uniform int EARTH_ID = 2;
-uniform int SKY_ID = 3;
+uniform int EARTH_ID = 1;
+uniform int SKY_ID = 2;
 
 // Colors
 uniform vec3 EARTH_DAY_COLOR = { 0.1, 0.75, 0.1 };

@@ -7,16 +7,33 @@
 
 using namespace std;
 
+// Data structures that keep certain meshes
 vector<Mesh *> roadPartsMeshes;
 vector<Mesh *> bordersMeshes;
 vector<Mesh *> obstacles;
+
+// Data structures that keep crtain coordinates
 vector<float> obsCoords;
 vector<CollisionCircle> collisionCircles;
 
+// Variable that represents the current hour (in 24h format)
 float hourOfTheDay = 10.0;
 
+// Variables used in solid and wireframe draw
 GLenum cullFace;
 GLenum polygonMode;
+
+// Variables used in movement of the car
+float tireRotation = 0;
+float angleOfMovement = 0;
+
+// Condition variable for movement of the car
+bool canMove = false;
+bool rotateLeft = false;
+bool rotateRight = false;
+
+// Condition variable for camera type
+bool isCameraFPS = false;
 
 Homework2::Homework2()
 {
@@ -32,16 +49,14 @@ void Homework2::Init()
 	polygonMode = GL_FILL;
 
 	// Set the camera
+	/*
 	glm::ivec2 resolution = window->GetResolution();
 	auto camera = GetSceneCamera();
-	camera->SetPosition(glm::vec3(x, y, z));
-	camera->SetRotation(glm::vec3(RADIANS(-30), 0, 0));
-	//y -= 4.5;
-	//z -= 5;
-	//camera->SetPosition(glm::vec3(x, y, z));
-	//camera->SetRotation(glm::vec3(0, 0, 0));
+	camera->SetPosition(glm::vec3(cameraX, cameraY, cameraZ));
+	camera->SetRotation(glm::vec3(CAMERA_ROTATION_X, 0, 0));
 	camera->Update();
 	GetCameraInput()->SetActive(false);
+	*/
 
 	// Open track config file
 	ifstream trackConfigFile;
@@ -313,6 +328,7 @@ void Homework2::FrameStart()
 	// clears the color buffer (using the previously set color) and depth buffer
 	glClearColor(0, 0, 0, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
 
 	glm::ivec2 resolution = window->GetResolution();
 	// sets the screen area where to draw
@@ -321,16 +337,15 @@ void Homework2::FrameStart()
 
 void Homework2::Update(float deltaTimeSeconds)
 {
-	glPolygonMode(GL_FRONT_AND_BACK, polygonMode);
-
 	glm::mat4 modelMatrix;
+
+	// TODO: remove commented code
 	/*
 	modelMatrix = glm::translate(modelMatrix, glm::vec3(0, 1, 0));
 	modelMatrix = glm::rotate(modelMatrix, RADIANS(45.0f), glm::vec3(0, 1, 0));
 	modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f));
 	RenderSimpleMesh(meshes["cube"], shaders["VertexNormal"], modelMatrix);
 	*/
-	//RenderSimpleMesh(meshes["bamboo"], shaders["ShaderHomework2"], modelMatrix);
 
 	// Update the current hour of the 24h day
 	hourOfTheDay = fmod(hourOfTheDay + deltaTimeSeconds * ONE_MINUTE, 24);
@@ -340,6 +355,7 @@ void Homework2::Update(float deltaTimeSeconds)
 	RenderSimpleMesh(meshes[SKY_PREFIX], shaders[SHADER_NAME], glm::mat4(1));
 
 	// Render the road using the custom shader
+	// TODO: remove commented code
 	for (int i = 0; i < roadPartsMeshes.size() /*&& i < ROADBLOCKS_TO_RENDER*/; i++) {
 		RenderSimpleMesh(roadPartsMeshes[i], shaders[SHADER_NAME], glm::mat4(1));
 		RenderSimpleMesh(bordersMeshes[2 * i], shaders["VertexColor"], glm::mat4(1));
@@ -347,6 +363,7 @@ void Homework2::Update(float deltaTimeSeconds)
 	}
 
 	// Render the next obstacle on the track
+	// TODO: render only the next obstacle
 	if (obstacles.size() > 0) {
 		for (int i = 0; i < obstacles.size(); i++) {
 			modelMatrix = glm::translate(glm::mat4(1), glm::vec3(obsCoords[2 * i], 0, obsCoords[2 * i + 1]));
@@ -355,18 +372,49 @@ void Homework2::Update(float deltaTimeSeconds)
 		}	
 	}
 
-	float moveOffset = (canMove) ? deltaTimeSeconds * SPEED : 0;
-	float rotationOffset = (canMove) ? deltaTimeSeconds * ROTATION : 0;
-
-	auto camera = GetSceneCamera();
-	z -= moveOffset;
-	camera->SetPosition(glm::vec3(x, y, z));
-
-	tireRotation -= rotationOffset;
-
+	// Update the angle of the movement
 	angleOfMovement += (rotateLeft) ? deltaTimeSeconds * MOVEMENT_ROTATION : 0;
 	angleOfMovement -= (rotateRight) ? deltaTimeSeconds * MOVEMENT_ROTATION : 0;
 
+	// Calculate offset for car movement
+	float moveOffset = (canMove) ? deltaTimeSeconds * SPEED : 0;
+	float moveOffsetX = (canMove) ? moveOffset * cos(M_PI / 2 + RADIANS(angleOfMovement)) : 0;
+	float moveOffsetZ = (canMove) ? -moveOffset * sin(M_PI / 2 + RADIANS(angleOfMovement)) : 0;
+
+	// Update camera
+	cameraX += moveOffsetX;
+	cameraZ += moveOffsetZ;	
+	if (isCameraFPS) {
+		// Calculate offset for FPS Camera to be exactly in front of the car
+		float fpsOffsetX = Car::CAR_LENGTH * cos(M_PI / 2 + RADIANS(angleOfMovement));
+		float fpsOffsetZ = -Car::CAR_LENGTH * sin(M_PI / 2 + RADIANS(angleOfMovement));
+
+		// Set FPS Camera Properties
+		GetSceneCamera()->SetPosition(glm::vec3(cameraX + fpsOffsetX, FPS_CAMERA_Y, cameraZ + fpsOffsetZ));
+		GetSceneCamera()->SetRotation(glm::vec3(CAMERA_ROTATION_X, RADIANS(angleOfMovement), 0));
+	}
+	else {
+		// Set TPS Camera Properties
+		GetSceneCamera()->SetPosition(glm::vec3(cameraX, cameraY, cameraZ + TPS_CAMERA_Z));
+		GetSceneCamera()->SetRotation(glm::vec3(CAMERA_ROTATION_X, RADIANS(angleOfMovement) / 3, 0));
+	}
+
+	// Update the car coordinates
+	carCoords[CAR_INDEX] += moveOffsetX;
+	carCoords[CAR_INDEX + 1] += moveOffsetZ;
+
+	// Render the car
+	modelMatrix = glm::mat4(1);
+	modelMatrix = glm::translate(modelMatrix, glm::vec3(carCoords[CAR_INDEX], 0, carCoords[CAR_INDEX + 1]));
+	modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
+	RenderSimpleMesh(meshes[CAR_PREFIX], shaders["VertexColor"], modelMatrix);
+
+
+	//float rotationOffset = (canMove) ? deltaTimeSeconds * TIRE_ROTATION : 0;
+	//tireRotation -= rotationOffset;
+
+
+	/*
 	// Render the tires
 	for (int i = 0; i < COUNT_TIRES; i++) {
 		carCoords[2 * i + 1] -= moveOffset;
@@ -375,13 +423,7 @@ void Homework2::Update(float deltaTimeSeconds)
 		modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
 		RenderSimpleMesh(meshes[TIRE_PREFIX + to_string(i)], shaders["VertexColor"], modelMatrix);
 	}
-	
-	// Render the car
-	carCoords[CAR_INDEX + 1] -= moveOffset;
-	modelMatrix = glm::translate(glm::mat4(1), glm::vec3(
-			carCoords[CAR_INDEX], 0, carCoords[CAR_INDEX + 1]));
-	modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
-	RenderSimpleMesh(meshes[CAR_PREFIX], shaders["VertexColor"], modelMatrix);
+	*/
 }
 
 void Homework2::FrameEnd()
@@ -393,9 +435,6 @@ int Homework2::GetMeshSHID(Mesh *mesh)
 {
 	if (strncmp(mesh->GetMeshID(), ROADPART_PREFIX.c_str(), ROADPART_PREFIX.length()) == 0) {
 		return ROADPART_SHID;
-	}
-	else if (strncmp(mesh->GetMeshID(), BORDER_PREFIX.c_str(), BORDER_PREFIX.length()) == 0) {
-		return BORDER_SHID;
 	}
 	else if (strncmp(mesh->GetMeshID(), EARTH_PREFIX.c_str(), EARTH_PREFIX.length()) == 0) {
 		return EARTH_SHID;
@@ -455,6 +494,8 @@ void Homework2::OnInputUpdate(float deltaTime, int mods)
 void Homework2::OnKeyPress(int key, int mods)
 {
 	// Example of recycling road parts and borders
+	// TODO: Remove commented code
+	/*
 	if (key == GLFW_KEY_N) {
 		if (roadPartsMeshes.size() != 0)
 		{
@@ -468,7 +509,7 @@ void Homework2::OnKeyPress(int key, int mods)
 			obsCoords.erase(obsCoords.begin());
 			obsCoords.erase(obsCoords.begin());
 		}
-	}
+	}*/
 
 	if (key == GLFW_KEY_UP) {
 		canMove = true;
@@ -482,6 +523,12 @@ void Homework2::OnKeyPress(int key, int mods)
 		rotateRight = true;
 	}
 
+	// Change the type of camera
+	if (key == GLFW_KEY_F) {
+		isCameraFPS = !isCameraFPS;
+	}
+
+	// Update draw mode
 	if (key == GLFW_KEY_SPACE)
 	{
 		switch (polygonMode)
