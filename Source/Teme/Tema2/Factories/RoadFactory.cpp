@@ -136,3 +136,79 @@ std::vector<unsigned short> RoadFactory::createCuboidIndices()
 	};
 }
 
+float RoadFactory::getBorderX1(glm::vec3 bottomLeftCorner, Road::BorderType type)
+{
+	float x = bottomLeftCorner[0];
+	float z = bottomLeftCorner[2];
+
+	if (type == Road::BorderType::LEFT) {
+		return x;
+	}
+	else if (type == Road::BorderType::RIGHT) {
+		return x + Road::ROADPART_LENGTH;
+	}
+	else if (type == Road::BorderType::TOP) {
+		return x + Road::ROADPART_LENGTH;
+	}
+	else if (type == Road::BorderType::BOTTOM) {
+		return x + Road::ROADPART_LENGTH;
+	}
+}
+
+float RoadFactory::getBorderY1(glm::vec3 bottomLeftCorner, Road::BorderType type)
+{
+	float x = bottomLeftCorner[0];
+	float z = bottomLeftCorner[2];
+
+	if (type == Road::BorderType::LEFT) {
+		return z;
+	}
+	else if (type == Road::BorderType::RIGHT) {
+		return z;
+	}
+	else if (type == Road::BorderType::TOP) {
+		return z - Road::ROADPART_LENGTH;
+	}
+	else if (type == Road::BorderType::BOTTOM) {
+		return z;
+	}
+}
+
+float RoadFactory::getBorderX2(glm::vec3 bottomLeftCorner, Road::BorderType type)
+{
+	float x = bottomLeftCorner[0];
+	float z = bottomLeftCorner[2];
+
+	if (type == Road::BorderType::LEFT) {
+		return x;
+	}
+	else if (type == Road::BorderType::RIGHT) {
+		return x + Road::ROADPART_LENGTH;
+	}
+	else if (type == Road::BorderType::TOP) {
+		return x;
+	}
+	else if (type == Road::BorderType::BOTTOM) {
+		return x;
+	}
+}
+
+float RoadFactory::getBorderY2(glm::vec3 bottomLeftCorner, Road::BorderType type)
+{
+	float x = bottomLeftCorner[0];
+	float z = bottomLeftCorner[2];
+
+	if (type == Road::BorderType::LEFT) {
+		return z - Road::ROADPART_LENGTH;
+	}
+	else if (type == Road::BorderType::RIGHT) {
+		return z - Road::ROADPART_LENGTH;
+	}
+	else if (type == Road::BorderType::TOP) {
+		return z - Road::ROADPART_LENGTH;
+	}
+	else if (type == Road::BorderType::BOTTOM) {
+		return z;
+	}
+}
+

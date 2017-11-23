@@ -7,6 +7,7 @@
 #include "Factories/EarthFactory.h"
 #include "Factories/SkyFactory.h"
 #include "Objects\CollisionCircle.h"
+#include "Objects\Algorithms.h"
 
 class Homework2 : public SimpleScene
 {
@@ -31,7 +32,7 @@ private:
 	void OnMouseScroll(int mouseX, int mouseY, int offsetX, int offsetY) override;
 	void OnWindowResize(int width, int height) override;
 
-	// Prefixes and for all objects
+	// Prefixes for all objects
 	const std::string ROADPART_PREFIX = "ROADPART";
 	const std::string BORDER_PREFIX = "BORDER";
 	const std::string EARTH_PREFIX = "EARTH";
@@ -53,6 +54,7 @@ private:
 	const float OBSTACLE_COORDS[20] = { 13, 9.5, 9, 11.5, -1, 11.5, -6, 9.5, -4, 2.5,
 		-1, 0.5, 7, 1.5, 7, -8.5, -5, -7.5, 0, -19.5 };
 	const float OBSTACLE_RADIUS = 0.5;
+	const int LIVES = 9;
 
 	// Car data
 	const int COUNT_CAR_COORDS = 10;
@@ -63,15 +65,14 @@ private:
 	const float TIRE_RADIUS = 0.15;
 
 	// Movement constants
-	const float SPEED = 4.0;
+	const float SPEED = 0.25;
+	const int TOP_GEAR = 5;
 	const float MOVEMENT_ROTATION = 70;
-	const float TIRE_ROTATION = 300;	
+	const float TIRE_ROTATION = 300;
 
 	// Constants and coordinates for meshes
 	const float ROAD_START_X = 20;
 	const float ROAD_START_Z = 24;
-	// TODO: Render only this number of road blocks and borders
-	const int ROADBLOCKS_TO_RENDER = 10;
 
 	// Time constant (the amount of time that passes in a frame)
 	const float ONE_MINUTE = 1.5;
@@ -90,5 +91,7 @@ private:
 	const std::string STRAIGHT_LINE = "STRAIGHT_LINE";
 	const std::string LEFT_LINE = "LEFT_LINE";
 	const std::string RIGHT_LINE = "RIGHT_LINE";
-	
+
+	// Highscore file
+	const std::string PATH_TO_HIGHSCORE_FILE = "D:\\Tudor\\Desktop\\Teme-EGC\\Source\\Teme\\Tema2\\Track1.hsc";
 };

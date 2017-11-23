@@ -20,5 +20,9 @@ public:
 	static std::vector<VertexFormat> createBorderVertices(glm::vec3 bottomLeftCorner,
 			Road::BorderType type);
 	static std::vector<unsigned short> createCuboidIndices();
+	static float getBorderX1(glm::vec3 bottomLeftCorner, Road::BorderType type);
+	static float getBorderY1(glm::vec3 bottomLeftCorner, Road::BorderType type);
+	static float getBorderX2(glm::vec3 bottomLeftCorner, Road::BorderType type);
+	static float getBorderY2(glm::vec3 bottomLeftCorner, Road::BorderType type);
 };
 

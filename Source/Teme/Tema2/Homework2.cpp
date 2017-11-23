@@ -12,9 +12,20 @@ vector<Mesh *> roadPartsMeshes;
 vector<Mesh *> bordersMeshes;
 vector<Mesh *> obstacles;
 
-// Data structures that keep crtain coordinates
+// Data structures that keep certain coordinates
+struct Line {
+	float x1;
+	float y1;
+	float x2;
+	float y2;
+};
+vector<Line> collisionBorderLines;
+Line finishLine;
 vector<float> obsCoords;
 vector<CollisionCircle> collisionCircles;
+
+// Counter for the occurred collisions
+int occurredCollisions = 0;
 
 // Variable that represents the current hour (in 24h format)
 float hourOfTheDay = 10.0;
@@ -26,14 +37,18 @@ GLenum polygonMode;
 // Variables used in movement of the car
 float tireRotation = 0;
 float angleOfMovement = 0;
+float currentGear = 0;
 
 // Condition variable for movement of the car
-bool canMove = false;
 bool rotateLeft = false;
 bool rotateRight = false;
 
 // Condition variable for camera type
 bool isCameraFPS = false;
+
+// Highscore data
+float bestTime;
+int bestLives;
 
 Homework2::Homework2()
 {
@@ -70,12 +85,10 @@ void Homework2::Init()
 		// Tokenize the line
 		char *startOfLine = &line[0];
 		vector<string> lineTokens;
-		do
-		{
+		do {
 			const char *begin = startOfLine;
 			while (*startOfLine != ' ' && *startOfLine)
 				startOfLine++;
-
 			lineTokens.push_back(string(begin, startOfLine - begin));
 		} while (0 != *startOfLine++);
 
@@ -96,12 +109,39 @@ void Homework2::Init()
 
 	// Close track config file
 	trackConfigFile.close();
+
+	// Open track highscore file
+	ifstream highscoreFile;
+	highscoreFile.open(PATH_TO_HIGHSCORE_FILE, ios::in);
+	if (!highscoreFile.is_open()) {
+		cout << "ERROR at opening highscore file" << endl;
+	}
+
+	// Read and store best high score from file
+	while (getline(highscoreFile, line)) {
+		// Tokenize the line
+		char *startOfLine = &line[0];
+		vector<string> lineTokens;
+		do {
+			const char *begin = startOfLine;
+			while (*startOfLine != ' ' && *startOfLine)
+				startOfLine++;
+			lineTokens.push_back(string(begin, startOfLine - begin));
+		} while (0 != *startOfLine++);
+
+		bestTime = stof(lineTokens[0], NULL);
+		bestLives = stoi(lineTokens[1], NULL, 10);
+	}
+
+	// Close highscore file
+	highscoreFile.close();
 	
-	// Create a vector that will contain the meshes for all road parts
+	// Variables initialization
 	float currX = ROAD_START_X;
 	float currZ = ROAD_START_Z;
 	int indexRoadPart = 0;
 
+	// Create a vector that will contain all road parts meshes
 	for (int i = 0; i < roadParts.size(); i++)
 	{
 		_MyRoadPart thisRoadPart = roadParts[i];
@@ -172,9 +212,9 @@ void Homework2::Init()
 			name = BORDER_PREFIX + to_string(indexRoadPart);
 			Road::BorderType type1 = (thisRoadPart.length != 0) ? types[0] : lastPartTypes[0];
 			Road::BorderType type2 = (thisRoadPart.length != 0) ? types[1] : lastPartTypes[1];
+			
 			Mesh *newBorder1 = CreateMesh(name + "_1", glm::vec3(currX, 0, currZ), type1);
 			bordersMeshes.push_back(newBorder1);
-
 			Mesh *newBorder2 = CreateMesh(name + "_2", glm::vec3(currX, 0, currZ), type2);
 			bordersMeshes.push_back(newBorder2);
 
@@ -182,14 +222,22 @@ void Homework2::Init()
 		}
 	}
 
-	// Create the mesh for the earth (ground)
+	// Set the finish line
+	{
+		finishLine.x1 = currX;
+		finishLine.y1 = currZ;
+		finishLine.x2 = currX + 1;
+		finishLine.y2 = currZ - Road::ROADPART_LENGTH;
+	}
+	
+	// Create the meshes for earth and sky
 	Mesh *earth = CreateMesh(EARTH_PREFIX, (glm::vec3)NULL, (Road::BorderType)NULL);
-
-	// Create the mesh for the sky
 	Mesh* sky = CreateMesh(SKY_PREFIX, (glm::vec3)NULL, (Road::BorderType)NULL);
+	
+	// Variable used in generating obstacles for teapot-sphere alternation
+	bool isTeapot = true;
 
 	// Create the obstacles
-	bool isTeapot = true;
 	for (int i = 0; i < COUNT_OBSTACLES; i++) {
 		Mesh* obstacle = new Mesh(OBSTACLE_PREFIX + to_string(i + 1));
 		
@@ -225,6 +273,13 @@ void Homework2::Init()
 	shader->AddShader("Source/Teme/Tema2/Shaders/FragmentShader.glsl", GL_FRAGMENT_SHADER);
 	shader->CreateAndLink();
 	shaders[shader->GetName()] = shader;
+
+	cout << "Welcome to probably the best racing adventure you will ever have!" << endl;
+	cout << "You have " << LIVES << " lives to reach the finish line as fast as possible" << endl;
+	cout << "Your supercar has a manual gearbox with " << TOP_GEAR << " gears" << endl;
+	cout << "--- GOOD LUCK! ---" << endl << endl;
+	cout << "Map Initialization Status -> COMPLETED" << endl;
+	cout << "Game Status -> START" << endl;
 }
 
 Mesh * Homework2::CreateMesh(string name, glm::vec3 bottomLeftCorner, Road::BorderType borderType)
@@ -241,6 +296,14 @@ Mesh * Homework2::CreateMesh(string name, glm::vec3 bottomLeftCorner, Road::Bord
 		// Create vector and indices for a border object
 		vertices = RoadFactory::createBorderVertices(bottomLeftCorner, borderType);
 		indices = RoadFactory::createCuboidIndices();
+
+		// Add the border collision line
+		Line line;
+		line.x1 = RoadFactory::getBorderX1(bottomLeftCorner, borderType);
+		line.y1 = RoadFactory::getBorderY1(bottomLeftCorner, borderType);
+		line.x2 = RoadFactory::getBorderX2(bottomLeftCorner, borderType);
+		line.y2 = RoadFactory::getBorderY2(bottomLeftCorner, borderType);;
+		collisionBorderLines.push_back(line);
 	}
 	else if (name.compare(0, EARTH_PREFIX.length(), EARTH_PREFIX) == 0) {
 		// Create vector and indices for the earth object
@@ -336,22 +399,18 @@ void Homework2::Update(float deltaTimeSeconds)
 	RenderSimpleMesh(meshes[EARTH_PREFIX], shaders[SHADER_NAME], glm::mat4(1));
 	RenderSimpleMesh(meshes[SKY_PREFIX], shaders[SHADER_NAME], glm::mat4(1));
 
-	// Render the road using the custom shader
-	// TODO: remove commented code
-	for (int i = 0; i < roadPartsMeshes.size() /*&& i < ROADBLOCKS_TO_RENDER*/; i++) {
+	// Render the road using the custom shader and borders with generic shader
+	for (int i = 0; i < roadPartsMeshes.size(); i++) {
 		RenderSimpleMesh(roadPartsMeshes[i], shaders[SHADER_NAME], glm::mat4(1));
 		RenderSimpleMesh(bordersMeshes[2 * i], shaders["VertexColor"], glm::mat4(1));
 		RenderSimpleMesh(bordersMeshes[2 * i + 1], shaders["VertexColor"], glm::mat4(1));
 	}
 
 	// Render the next obstacle on the track
-	// TODO: render only the next obstacle
-	if (obstacles.size() > 0) {
-		for (int i = 0; i < obstacles.size(); i++) {
-			modelMatrix = glm::translate(glm::mat4(1), glm::vec3(obsCoords[2 * i], 0, obsCoords[2 * i + 1]));
-			modelMatrix = glm::rotate(modelMatrix, RADIANS(60.0f), glm::vec3(0, 1, 0));
-			RenderSimpleMesh(obstacles[i], shaders["VertexNormal"], modelMatrix);
-		}	
+	for (int i = 0; i < obstacles.size(); i++) {
+		modelMatrix = glm::translate(glm::mat4(1), glm::vec3(obsCoords[2 * i], 0, obsCoords[2 * i + 1]));
+		modelMatrix = glm::rotate(modelMatrix, RADIANS(60.0f), glm::vec3(0, 1, 0));
+		RenderSimpleMesh(obstacles[i], shaders["VertexNormal"], modelMatrix);
 	}
 
 	// Update the angle of the movement
@@ -359,42 +418,49 @@ void Homework2::Update(float deltaTimeSeconds)
 	angleOfMovement -= (rotateRight) ? deltaTimeSeconds * MOVEMENT_ROTATION : 0;
 
 	// Calculate offset for car movement
-	float moveOffset = (canMove) ? deltaTimeSeconds * SPEED : 0;
-	float moveOffsetX = (canMove) ? moveOffset * cos(M_PI / 2 + RADIANS(angleOfMovement)) : 0;
-	float moveOffsetZ = (canMove) ? -moveOffset * sin(M_PI / 2 + RADIANS(angleOfMovement)) : 0;
+	float moveOffset = currentGear * deltaTimeSeconds * SPEED;
+	float moveOffsetX = currentGear * moveOffset * cos(M_PI / 2 + RADIANS(angleOfMovement));
+	float moveOffsetZ = currentGear * -moveOffset * sin(M_PI / 2 + RADIANS(angleOfMovement));
 
 	// Update camera
-	cameraX += moveOffsetX;
-	cameraZ += moveOffsetZ;	
-	if (isCameraFPS) {
-		// Calculate offset for FPS Camera to be exactly in front of the car
-		float fpsOffsetX = Car::CAR_LENGTH * cos(M_PI / 2 + RADIANS(angleOfMovement));
-		float fpsOffsetZ = -Car::CAR_LENGTH * sin(M_PI / 2 + RADIANS(angleOfMovement));
+	{
+		cameraX += moveOffsetX;
+		cameraZ += moveOffsetZ;
+		if (isCameraFPS) {
+			// Calculate offset for FPS Camera to be exactly in front of the car
+			float fpsOffsetX = Car::CAR_LENGTH * cos(M_PI / 2 + RADIANS(angleOfMovement));
+			float fpsOffsetZ = -Car::CAR_LENGTH * sin(M_PI / 2 + RADIANS(angleOfMovement));
 
-		// Set FPS Camera Properties
-		GetSceneCamera()->SetPosition(glm::vec3(cameraX + fpsOffsetX, FPS_CAMERA_Y, cameraZ + fpsOffsetZ));
-		GetSceneCamera()->SetRotation(glm::vec3(CAMERA_ROTATION_X, RADIANS(angleOfMovement), 0));
+			// Set FPS Camera Properties
+			GetSceneCamera()->SetPosition(glm::vec3(cameraX + fpsOffsetX, FPS_CAMERA_Y, cameraZ + fpsOffsetZ));
+			GetSceneCamera()->SetRotation(glm::vec3(CAMERA_ROTATION_X, RADIANS(angleOfMovement), 0));
+		}
+		else {
+			// Set TPS Camera Properties
+			GetSceneCamera()->SetPosition(glm::vec3(cameraX, cameraY, cameraZ + TPS_CAMERA_Z));
+			GetSceneCamera()->SetRotation(glm::vec3(CAMERA_ROTATION_X, RADIANS(angleOfMovement) / 3, 0));
+		}
 	}
-	else {
-		// Set TPS Camera Properties
-		GetSceneCamera()->SetPosition(glm::vec3(cameraX, cameraY, cameraZ + TPS_CAMERA_Z));
-		GetSceneCamera()->SetRotation(glm::vec3(CAMERA_ROTATION_X, RADIANS(angleOfMovement) / 3, 0));
-	}
-
+	
 	// Update the car coordinates
-	carCoords[CAR_INDEX] += moveOffsetX;
-	carCoords[CAR_INDEX + 1] += moveOffsetZ;
+	{
+		carCoords[CAR_INDEX] += moveOffsetX;
+		carCoords[CAR_INDEX + 1] += moveOffsetZ;
+	}
 
 	// Render the car
-	modelMatrix = glm::mat4(1);
-	modelMatrix = glm::translate(modelMatrix, glm::vec3(carCoords[CAR_INDEX], 0, carCoords[CAR_INDEX + 1]));
-	modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
-	RenderSimpleMesh(meshes[CAR_PREFIX], shaders["VertexColor"], modelMatrix);
-
+	{
+		modelMatrix = glm::mat4(1);
+		modelMatrix = glm::translate(modelMatrix, glm::vec3(carCoords[CAR_INDEX], 0,
+				carCoords[CAR_INDEX + 1]));
+		modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
+		RenderSimpleMesh(meshes[CAR_PREFIX], shaders["VertexColor"], modelMatrix);
+	}
+	
 	// Update tires rotation
-	float rotationOffset = (canMove) ? -deltaTimeSeconds * TIRE_ROTATION : 0;
-	tireRotation += rotationOffset;
+	tireRotation -= deltaTimeSeconds * currentGear * TIRE_ROTATION;
 
+	// Render the tires
 	for (int i = 0; i < COUNT_TIRES; i++) {
 		// Update tires coordinates
 		carCoords[2 * i] += moveOffsetX;
@@ -404,7 +470,6 @@ void Homework2::Update(float deltaTimeSeconds)
 		float translateX = carCoords[2 * i] - tireOffsets[2 * i];
 		float translateZ = carCoords[2 * i + 1] - tireOffsets[2 * i + 1];
 
-		// Render the tires
 		modelMatrix = glm::mat4(1);
 		modelMatrix = glm::translate(modelMatrix, glm::vec3(translateX, 0, translateZ));
 		modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
@@ -412,12 +477,93 @@ void Homework2::Update(float deltaTimeSeconds)
 		modelMatrix = glm::rotate(modelMatrix, RADIANS(tireRotation), glm::vec3(1, 0, 0));
 		RenderSimpleMesh(meshes[TIRE_PREFIX + to_string(i)], shaders["VertexNormal"], modelMatrix);
 	}
-	
+
+	// Calculate offsets for points in front of the car
+	modelMatrix = glm::rotate(glm::mat4(1), RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
+	glm::vec3 offsetFrontCarLeft = modelMatrix * glm::vec4(-Car::CAR_WIDTH, 0, -Car::CAR_LENGTH, 1);
+	glm::vec3 offsetFrontCarRight = modelMatrix * glm::vec4(Car::CAR_WIDTH, 0, -Car::CAR_LENGTH, 1);
+
+	// Calculate front of the car
+	Line frontOfTheCar;
+	frontOfTheCar.x1 = carCoords[CAR_INDEX] + offsetFrontCarLeft[0];
+	frontOfTheCar.y1 = carCoords[CAR_INDEX + 1] + offsetFrontCarLeft[2];
+	frontOfTheCar.x2 = carCoords[CAR_INDEX] + offsetFrontCarRight[0];
+	frontOfTheCar.y2 = carCoords[CAR_INDEX + 1] + offsetFrontCarRight[2];
+
+	// Detect border collisions with the front of the car
+	for (Line line : collisionBorderLines) {
+		int collision = get_line_intersection(frontOfTheCar.x1, frontOfTheCar.y1, frontOfTheCar.x2,
+			frontOfTheCar.y2, line.x1, line.y1, line.x2, line.y2, NULL, NULL);
+		if (collision == 1) {
+			if (currentGear != 0) {
+				currentGear = 0;
+				occurredCollisions++;
+				cout << "Oops, You hit a BORDER and lost a life!" << endl;
+				cout << "Lives left -> " << LIVES - occurredCollisions << endl;
+				break;
+			}
+		}
+	}
+
+	// Detect collision with obstacles
+	for (int i = 0; i < collisionCircles.size(); i++) {
+		if (detectCollisionBetweenLineAndCircle(frontOfTheCar.x1, frontOfTheCar.y1,
+			frontOfTheCar.x2, frontOfTheCar.y2, collisionCircles[i])) {
+
+			// Remove the obstacle
+			collisionCircles.erase(collisionCircles.begin() + i);
+			obsCoords.erase(obsCoords.begin() + 2 * i);
+			obsCoords.erase(obsCoords.begin() + 2 * i);
+			obstacles.erase(obstacles.begin() + i);
+			
+			currentGear = 0;
+			occurredCollisions++;
+			cout << "Oops, You hit an OBSTACLE and lost a life!" << endl;
+			cout << "Lives left -> " << LIVES - occurredCollisions << endl;
+			break;
+		}
+	}
+
+	// Detect crossing the finish line
+	{
+		int collision = get_line_intersection(frontOfTheCar.x1, frontOfTheCar.y1, frontOfTheCar.x2,
+			frontOfTheCar.y2, finishLine.x1, finishLine.y1, finishLine.x2, finishLine.y2, NULL, NULL);
+		if (collision == 1) {
+			// WIN
+			Engine::GetWindow()->Close();
+
+			float time = Engine::GetElapsedTime();
+			int lives = LIVES - occurredCollisions;
+			if (time < bestTime || (time == bestTime && lives > bestLives)) {
+				cout << "NEW HIGHSCORE!" << endl;
+				
+				// Update highscore file 
+				ofstream oHighscoreFile(PATH_TO_HIGHSCORE_FILE);
+
+				if (oHighscoreFile.is_open())
+				{
+					oHighscoreFile << time << " " << lives;
+				}
+				
+				oHighscoreFile.close();
+			}
+			cout << "Congrats! You reached the finish line in " << time << " seconds";
+			cout << " with " << lives << " lives left" << endl;
+			cout << "Game Status -> WIN" << endl;
+		}
+	}
 }
 
 void Homework2::FrameEnd()
 {
 	DrawCoordinatSystem();
+
+	if (occurredCollisions >= LIVES) {
+		// DEFEAT
+		Engine::GetWindow()->Close();
+		cout << "FAIL! You lost (no more lives left) in " << Engine::GetElapsedTime() << " seconds";
+		cout << endl << "Game Status -> DEFEAT" << endl;
+	}
 }
 
 int Homework2::GetMeshSHID(Mesh *mesh)
@@ -482,32 +628,20 @@ void Homework2::OnInputUpdate(float deltaTime, int mods)
 
 void Homework2::OnKeyPress(int key, int mods)
 {
-	// Example of recycling road parts and borders
-	// TODO: Remove commented code
-	/*
-	if (key == GLFW_KEY_N) {
-		if (roadPartsMeshes.size() != 0)
-		{
-			roadPartsMeshes.erase(roadPartsMeshes.begin());
-			bordersMeshes.erase(bordersMeshes.begin());
-			bordersMeshes.erase(bordersMeshes.begin());
-		}
-
-		if (obstacles.size() != 0) {
-			obstacles.erase(obstacles.begin());
-			obsCoords.erase(obsCoords.begin());
-			obsCoords.erase(obsCoords.begin());
-		}
-	}*/
-
-	// Update one of the condition variables for the movement
+	// Change gear, if possible
 	if (key == GLFW_KEY_UP) {
-		canMove = true;
+		if (currentGear < TOP_GEAR) {
+			currentGear++;
+		}
 	}
 	else if (key == GLFW_KEY_DOWN) {
-		canMove = false;
+		if (currentGear > 0) {
+			currentGear--;
+		}
 	}
-	else if (key == GLFW_KEY_LEFT) {
+
+	// Change direction
+	if (key == GLFW_KEY_LEFT) {
 		rotateLeft = true;
 	} else if (key == GLFW_KEY_RIGHT) {
 		rotateRight = true;
