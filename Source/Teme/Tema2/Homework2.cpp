@@ -48,16 +48,6 @@ void Homework2::Init()
 	cullFace = GL_BACK;
 	polygonMode = GL_FILL;
 
-	// Set the camera
-	/*
-	glm::ivec2 resolution = window->GetResolution();
-	auto camera = GetSceneCamera();
-	camera->SetPosition(glm::vec3(cameraX, cameraY, cameraZ));
-	camera->SetRotation(glm::vec3(CAMERA_ROTATION_X, 0, 0));
-	camera->Update();
-	GetCameraInput()->SetActive(false);
-	*/
-
 	// Open track config file
 	ifstream trackConfigFile;
 	trackConfigFile.open(PATH_TO_CONFIG_FILE, ios::in);
@@ -339,14 +329,6 @@ void Homework2::Update(float deltaTimeSeconds)
 {
 	glm::mat4 modelMatrix;
 
-	// TODO: remove commented code
-	/*
-	modelMatrix = glm::translate(modelMatrix, glm::vec3(0, 1, 0));
-	modelMatrix = glm::rotate(modelMatrix, RADIANS(45.0f), glm::vec3(0, 1, 0));
-	modelMatrix = glm::scale(modelMatrix, glm::vec3(0.5f));
-	RenderSimpleMesh(meshes["cube"], shaders["VertexNormal"], modelMatrix);
-	*/
-
 	// Update the current hour of the 24h day
 	hourOfTheDay = fmod(hourOfTheDay + deltaTimeSeconds * ONE_MINUTE, 24);
 
@@ -409,21 +391,28 @@ void Homework2::Update(float deltaTimeSeconds)
 	modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
 	RenderSimpleMesh(meshes[CAR_PREFIX], shaders["VertexColor"], modelMatrix);
 
+	// Update tires rotation
+	float rotationOffset = (canMove) ? -deltaTimeSeconds * TIRE_ROTATION : 0;
+	tireRotation += rotationOffset;
 
-	//float rotationOffset = (canMove) ? deltaTimeSeconds * TIRE_ROTATION : 0;
-	//tireRotation -= rotationOffset;
-
-
-	/*
-	// Render the tires
 	for (int i = 0; i < COUNT_TIRES; i++) {
-		carCoords[2 * i + 1] -= moveOffset;
-		modelMatrix = glm::translate(glm::mat4(1), glm::vec3(carCoords[2 * i], 0.15, carCoords[2 * i + 1]));
-		modelMatrix = glm::rotate(modelMatrix, RADIANS(tireRotation), glm::vec3(1, 0, 0));
+		// Update tires coordinates
+		carCoords[2 * i] += moveOffsetX;
+		carCoords[2 * i + 1] += moveOffsetZ;
+
+		// Calculate translation
+		float translateX = carCoords[2 * i] - tireOffsets[2 * i];
+		float translateZ = carCoords[2 * i + 1] - tireOffsets[2 * i + 1];
+
+		// Render the tires
+		modelMatrix = glm::mat4(1);
+		modelMatrix = glm::translate(modelMatrix, glm::vec3(translateX, 0, translateZ));
 		modelMatrix = glm::rotate(modelMatrix, RADIANS(angleOfMovement), glm::vec3(0, 1, 0));
-		RenderSimpleMesh(meshes[TIRE_PREFIX + to_string(i)], shaders["VertexColor"], modelMatrix);
+		modelMatrix = glm::translate(modelMatrix, glm::vec3(tireOffsets[2 * i], TIRE_RADIUS, tireOffsets[2 * i + 1]));
+		modelMatrix = glm::rotate(modelMatrix, RADIANS(tireRotation), glm::vec3(1, 0, 0));
+		RenderSimpleMesh(meshes[TIRE_PREFIX + to_string(i)], shaders["VertexNormal"], modelMatrix);
 	}
-	*/
+	
 }
 
 void Homework2::FrameEnd()
@@ -511,6 +500,7 @@ void Homework2::OnKeyPress(int key, int mods)
 		}
 	}*/
 
+	// Update one of the condition variables for the movement
 	if (key == GLFW_KEY_UP) {
 		canMove = true;
 	}

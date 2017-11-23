@@ -59,6 +59,8 @@ private:
 	const int COUNT_TIRES = 4;
 	const int CAR_INDEX = 8;
 	float carCoords[10] = { 21.9f, 22.75f, 21.9f, 21.25f, 21.1f, 22.75f, 21.1f, 21.25f, 21.5, 22 };
+	float tireOffsets[8] = { 0.4f, 0.75f, 0.4f, -0.75f, -0.4f, 0.75f, -0.4f, -0.75f };
+	const float TIRE_RADIUS = 0.15;
 
 	// Movement constants
 	const float SPEED = 4.0;
